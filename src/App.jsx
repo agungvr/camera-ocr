@@ -46,7 +46,9 @@ function App() {
     const url2 = snapshotCanvas2Ref.current?.toDataURL("image/png");
 
     const ass = async () => {
-      const wew = await createWorker();
+      const wew = await createWorker({
+        langPath: "./assets/dotslayer.traineddata",
+      });
       return wew;
     };
     const worker = await ass();
