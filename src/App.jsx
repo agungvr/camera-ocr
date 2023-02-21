@@ -1,17 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createWorker } from "tesseract.js";
 import "./index.css";
+import { preprocessImage } from "./preprocessImage";
 
 function App() {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const canvasBWRef = useRef(null);
   const snapshotCanvasRef = useRef(null);
+  const snapshotCanvas2Ref = useRef(null);
 
   const [text, setText] = useState("");
+  const [text2, setText2] = useState("");
 
   const handleClick = async () => {
-    var context = snapshotCanvasRef.current?.getContext("2d");
+    const context = snapshotCanvasRef.current?.getContext("2d");
     context.drawImage(
       videoRef.current,
       100,
@@ -23,19 +26,38 @@ function App() {
       snapshotCanvasRef.current.width,
       snapshotCanvasRef.current.height
     );
+
+    const context2 = snapshotCanvas2Ref.current?.getContext("2d");
+    context2.drawImage(
+      videoRef.current,
+      100,
+      300,
+      600,
+      200,
+      0,
+      0,
+      snapshotCanvas2Ref.current.width,
+      snapshotCanvas2Ref.current.height
+    );
+
+    context2.putImageData(preprocessImage(canvasBWRef.current), 0, 0);
+
     const url = snapshotCanvasRef.current?.toDataURL("image/png");
+    const url2 = snapshotCanvas2Ref.current?.toDataURL("image/png");
 
     const ass = async () => {
       const wew = await createWorker();
       return wew;
     };
     const worker = await ass();
-    console.log(worker);
+
     await worker.load();
-    await worker.loadLanguage("eng");
-    await worker.initialize("eng");
-    const { data } = await worker.recognize(url);
-    setText(data.text || "Gak Kebaca wkwk");
+    await worker.loadLanguage("ind");
+    await worker.initialize("ind");
+    const ocr = await worker.recognize(url);
+    const ocr2 = await worker.recognize(url2);
+    setText(ocr.data.text || "Gak Kebaca wkwk");
+    setText2(ocr2.data.text || "Gak Kebaca wkwk");
   };
 
   useEffect(() => {
@@ -84,7 +106,7 @@ function App() {
   }, []);
 
   useEffect(() => {
-    var constraints = {
+    const constraints = {
       audio: false,
       video: {
         width: 1920,
@@ -127,8 +149,17 @@ function App() {
           Capture
         </button>
       </div>
-      <canvas ref={snapshotCanvasRef} width="300" height="100"></canvas>
-      <h2>{text}</h2>
+      <div style={{ backgroundColor: "aquamarine", textAlign: "center" }}>
+        <canvas ref={snapshotCanvasRef} width="300" height="100"></canvas>
+        <h4>Result: Original Image:</h4>
+        <h2>{text}</h2>
+      </div>
+      <br />
+      <div style={{ backgroundColor: "lightgreen", textAlign: "center" }}>
+        <canvas ref={snapshotCanvas2Ref} width="300" height="100"></canvas>
+        <h4>Result: Preprocess Image:</h4>
+        <h2>{text2}</h2>
+      </div>
     </div>
   );
 }
